@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "665020451634",
+    "project_id": "wordnerd-artbeat",
+    "storage_bucket": "wordnerd-artbeat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665020451634:android:bcc4cc04c2af99ac78652b",
+        "android_client_info": {
+          "package_name": "com.example.artbeat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWORLK8SxG6IKkaA5CaY2s3J2OIJ_36TA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665020451634:android:70aaba9b305fa17b78652b",
+        "android_client_info": {
+          "package_name": "com.wordnerd.artbeat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWORLK8SxG6IKkaA5CaY2s3J2OIJ_36TA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

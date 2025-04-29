@@ -1,0 +1,63 @@
+name: ArtBeat
+description: "Creativity in motion."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Components
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  lottie: ^3.1.0
+  
+  # State Management
+  flutter_bloc: ^8.1.4
+  provider: ^6.1.2
+  equatable: ^2.0.5
+  
+  # Backend & Authentication
+  supabase_flutter: ^2.3.3
+  
+  # Maps & Location
+  google_maps_flutter: ^2.5.3
+  location: ^5.0.3
+  geolocator: ^11.0.0
+  
+  # Utils
+  intl: ^0.19.0
+  image_picker: ^1.0.7
+  url_launcher: ^6.2.5
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.0
+  uuid: ^4.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+  build_runner: ^2.4.8
+
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/images/art/
+    - assets/images/icons/
+    - assets/fonts/
