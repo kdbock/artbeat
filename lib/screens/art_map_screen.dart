@@ -37,26 +37,34 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
       context,
       listen: false,
     );
-    final position = await locationService.getCurrentLocation();
-
-    if (position != null && mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(position.latitude, position.longitude),
-          14.0,
-        ),
-      );
-
-      await _loadNearbyArtLocations(position.latitude, position.longitude);
-    } else {
+    
+    try {
+      final position = await locationService.getCurrentLocation();
+      
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(position.latitude, position.longitude),
+            14.0,
+          ),
+        );
+
+        await _loadNearbyArtLocations(position.latitude, position.longitude);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error getting location: ${e.toString()}'),
+          ),
+        );
       }
     }
   }

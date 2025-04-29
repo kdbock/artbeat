@@ -10,25 +10,68 @@ import '../../core/themes/app_theme.dart';
 import '../../routing/route_names.dart';
 import '../../widgets/favorite_button.dart';
 
-class EventDetailsScreen extends StatelessWidget {
+class EventDetailsScreen extends StatefulWidget {
   final String eventId;
 
   const EventDetailsScreen({super.key, required this.eventId});
 
   @override
-  Widget build(BuildContext context) {
-    final eventService = Provider.of<EventService>(context);
-    final AuthService authService = Provider.of<AuthService>(context);
+  _EventDetailsScreenState createState() => _EventDetailsScreenState();
+}
 
-    Event event;
+class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  Event? _event;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEventDetails();
+  }
+
+  Future<void> _loadEventDetails() async {
+    try {
+      final eventService = Provider.of<EventService>(context, listen: false);
+      final event = await eventService.getEventById(widget.eventId);
+      if (mounted) {
+        setState(() {
+          _event = event;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load event: ${e.toString()}')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_event == null) {
+      return const Scaffold(
+        body: Center(child: Text('Event not found')),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(event.title),
+        title: Text(_event!.title),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () => _shareEvent(context, event),
+            onPressed: () => _shareEvent(context, _event!),
           ),
         ],
       ),
@@ -55,14 +98,14 @@ class EventDetailsScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          DateFormat('MMM').format(event.startDate),
+                          DateFormat('MMM').format(_event!.startDate),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          DateFormat('dd').format(event.startDate),
+                          DateFormat('dd').format(_event!.startDate),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -70,7 +113,7 @@ class EventDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          DateFormat('yyyy').format(event.startDate),
+                          DateFormat('yyyy').format(_event!.startDate),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -97,12 +140,12 @@ class EventDetailsScreen extends StatelessWidget {
                         Text(
                           DateFormat(
                             'EEEE, MMMM d, y',
-                          ).format(event.startDate),
+                          ).format(_event!.startDate),
                           style: const TextStyle(fontSize: 16),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${DateFormat('h:mm a').format(event.startDate)} - ${event.endDate != null ? DateFormat('h:mm a').format(event.endDate!) : 'End time not specified'}',
+                          '${DateFormat('h:mm a').format(_event!.startDate)} - ${_event!.endDate != null ? DateFormat('h:mm a').format(_event!.endDate!) : 'End time not specified'}',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[700],
@@ -146,7 +189,7 @@ class EventDetailsScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          event.location,
+                          _event!.location,
                           style: const TextStyle(fontSize: 16),
                         ),
                       ),
@@ -155,7 +198,7 @@ class EventDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // Map preview if coordinates available
-                  if (event.latitude != null && event.longitude != null)
+                  if (_event!.latitude != null && _event!.longitude != null)
                     SizedBox(
                       height: 150,
                       child: ClipRRect(
@@ -163,18 +206,18 @@ class EventDetailsScreen extends StatelessWidget {
                         child: GoogleMap(
                           initialCameraPosition: CameraPosition(
                             target: LatLng(
-                              event.latitude!,
-                              event.longitude!,
+                              _event!.latitude!,
+                              _event!.longitude!,
                             ),
                             zoom: 14.0,
                           ),
                           markers: {
                             Marker(
                               markerId: const MarkerId('event_location'),
-                              position: LatLng(event.latitude!, event.longitude!),
+                              position: LatLng(_event!.latitude!, _event!.longitude!),
                               infoWindow: InfoWindow(
-                                title: event.title,
-                                snippet: event.location,
+                                title: _event!.title,
+                                snippet: _event!.location,
                               ),
                             ),
                           },
@@ -192,7 +235,7 @@ class EventDetailsScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => _openMap(context, event),
+                      onPressed: () => _openMap(context, _event!),
                       icon: const Icon(Icons.directions),
                       label: const Text('Get Directions'),
                       style: ElevatedButton.styleFrom(
@@ -230,7 +273,7 @@ class EventDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    event.description,
+                    _event!.description,
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
@@ -241,7 +284,7 @@ class EventDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Artist Info Section
-          if (event.artistId != null)
+          if (_event!.artistId != null)
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -261,7 +304,7 @@ class EventDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     InkWell(
-                      onTap: () => _viewArtistProfile(context, event),
+                      onTap: () => _viewArtistProfile(context, _event!),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -269,12 +312,12 @@ class EventDetailsScreen extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 20,
-                              backgroundImage: event.artistImageUrl != null
+                              backgroundImage: _event!.artistImageUrl != null
                                   ? NetworkImage(
-                                      event.artistImageUrl!,
+                                      _event!.artistImageUrl!,
                                     )
                                   : null,
-                              child: event.artistImageUrl == null
+                              child: _event!.artistImageUrl == null
                                   ? const Icon(Icons.person)
                                   : null,
                             ),
@@ -283,7 +326,7 @@ class EventDetailsScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  event.artistName ?? 'Artist Name',
+                                  _event!.artistName ?? 'Artist Name',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -315,7 +358,7 @@ class EventDetailsScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _shareEvent(context, event),
+              onPressed: () => _shareEvent(context, _event!),
               icon: const Icon(Icons.share),
               label: const Text('Share Event'),
               style: ElevatedButton.styleFrom(
@@ -330,7 +373,7 @@ class EventDetailsScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _rsvpToEvent(context, event),
+              onPressed: () => _rsvpToEvent(context, _event!),
               icon: const Icon(Icons.check_circle),
               label: const Text('RSVP'),
               style: ElevatedButton.styleFrom(

@@ -3,7 +3,7 @@ import 'package:introduction_screen/introduction_screen.dart';
 import '../routing/route_names.dart';
 
 class OnboardingScreen extends StatelessWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -10,6 +10,11 @@ class AuthService extends ChangeNotifier {
   bool get isAuthenticated => _currentUser != null;
   bool get isArtist => _isArtist;
 
+  String? get currentUserId {
+    // Return the current user's ID (mock implementation)
+    return 'user123';
+  }
+
   AuthService() {
     _initialize();
   }
@@ -133,4 +138,51 @@ class AuthService extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<ArtistProfile?> getArtistProfile() async {
+    if (_currentUser == null) return null;
+
+    try {
+      final response = await _supabase
+          .from('artist_profiles')
+          .select('*')
+          .eq('user_id', _currentUser!.id)
+          .single()
+          .execute();
+
+      if (response.data != null) {
+        return ArtistProfile(
+          id: response.data['id'],
+          userId: response.data['user_id'],
+          name: response.data['name'],
+          bio: response.data['bio'],
+          subscriptionStatus: response.data['subscription_status'] ?? 'basic',
+          subscriptionEndDate: response.data['subscription_end_date'] != null
+              ? DateTime.parse(response.data['subscription_end_date'])
+              : DateTime.now().add(const Duration(days: 30)),
+        );
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+class ArtistProfile {
+  final String id;
+  final String userId;
+  final String? name;
+  final String? bio;
+  final String subscriptionStatus;
+  final DateTime? subscriptionEndDate;
+
+  ArtistProfile({
+    required this.id,
+    required this.userId,
+    this.name,
+    this.bio,
+    required this.subscriptionStatus,
+    this.subscriptionEndDate,
+  });
 }

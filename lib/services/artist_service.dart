@@ -15,6 +15,7 @@ class ArtistProfile {
   final String? bannerImageUrl;
   final DateTime createdAt;
   final String subscriptionStatus;
+  final DateTime? subscriptionEndDate;
 
   ArtistProfile({
     required this.id,
@@ -26,6 +27,7 @@ class ArtistProfile {
     this.bannerImageUrl,
     required this.createdAt,
     required this.subscriptionStatus,
+    this.subscriptionEndDate,
   });
 
   factory ArtistProfile.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,9 @@ class ArtistProfile {
       bannerImageUrl: json['banner_image_url'],
       createdAt: DateTime.parse(json['created_at']),
       subscriptionStatus: json['subscription_status'],
+      subscriptionEndDate: json['subscription_end_date'] != null 
+          ? DateTime.parse(json['subscription_end_date']) 
+          : null,
     );
   }
 }
@@ -142,16 +147,14 @@ class ArtistService extends ChangeNotifier {
 
   Future<ArtistProfile?> getArtistProfile(String userId) async {
     try {
-      final response =
-          await _supabase
-              .from('artist_profiles')
-              .select()
-              .eq('user_id', userId)
-              .single()
-              .execute();
+      final response = await _supabase
+          .from('artist_profiles')
+          .select()
+          .eq('user_id', userId)
+          .single();
 
-      if (response.data != null) {
-        return ArtistProfile.fromJson(response.data);
+      if (response != null) {
+        return ArtistProfile.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -167,22 +170,23 @@ class ArtistService extends ChangeNotifier {
     try {
       var queryBuilder = _supabase
           .from('artist_profiles')
-          .select('*, profiles(*)')
-          .order('created_at', ascending: false)
-          .limit(limit);
+          .select('*, profiles(*)');
 
       if (query != null && query.isNotEmpty) {
-        queryBuilder = queryBuilder.textSearch('bio', query);
+        // Using ilike for case-insensitive search instead of textSearch
+        queryBuilder = queryBuilder.ilike('bio', '%$query%');
       }
 
       if (zipCode != null) {
         queryBuilder = queryBuilder.eq('zip_code', zipCode);
       }
 
-      final response = await queryBuilder.execute();
+      final response = await queryBuilder
+          .order('created_at', ascending: false)
+          .limit(limit);
 
-      if (response.data != null) {
-        return (response.data as List)
+      if (response != null) {
+        return (response as List)
             .map((item) => ArtistProfile.fromJson(item))
             .toList();
       }
@@ -206,8 +210,7 @@ class ArtistService extends ChangeNotifier {
             if (website != null) 'website': website,
             if (socialMedia != null) 'social_media': socialMedia,
           })
-          .eq('user_id', userId)
-          .execute();
+          .eq('user_id', userId);
 
       notifyListeners();
       return true;
@@ -236,8 +239,7 @@ class ArtistService extends ChangeNotifier {
       await _supabase
           .from('artist_profiles')
           .update({'profile_image_url': imageUrl})
-          .eq('user_id', userId)
-          .execute();
+          .eq('user_id', userId);
 
       notifyListeners();
       return imageUrl;
@@ -266,8 +268,7 @@ class ArtistService extends ChangeNotifier {
       await _supabase
           .from('artist_profiles')
           .update({'banner_image_url': imageUrl})
-          .eq('user_id', userId)
-          .execute();
+          .eq('user_id', userId);
 
       notifyListeners();
       return imageUrl;
@@ -279,16 +280,14 @@ class ArtistService extends ChangeNotifier {
   // Gallery management
   Future<List<Artwork>> getArtistArtworks(String artistId) async {
     try {
-      final response =
-          await _supabase
-              .from('artworks')
-              .select()
-              .eq('artist_id', artistId)
-              .order('created_at', ascending: false)
-              .execute();
+      final response = await _supabase
+          .from('artworks')
+          .select()
+          .eq('artist_id', artistId)
+          .order('created_at', ascending: false);
 
-      if (response.data != null) {
-        return (response.data as List)
+      if (response != null) {
+        return (response as List)
             .map((item) => Artwork.fromJson(item))
             .toList();
       }
@@ -368,8 +367,7 @@ class ArtistService extends ChangeNotifier {
             if (tags != null) 'tags': tags,
             'updated_at': DateTime.now().toIso8601String(),
           })
-          .eq('id', artworkId)
-          .execute();
+          .eq('id', artworkId);
 
       notifyListeners();
       return true;
@@ -380,16 +378,14 @@ class ArtistService extends ChangeNotifier {
 
   Future<bool> deleteArtwork(String artworkId) async {
     try {
-      final response =
-          await _supabase
-              .from('artworks')
-              .select('image_url')
-              .eq('id', artworkId)
-              .single()
-              .execute();
+      final response = await _supabase
+          .from('artworks')
+          .select('image_url')
+          .eq('id', artworkId)
+          .single();
 
-      if (response.data != null) {
-        final imageUrl = response.data['image_url'] as String?;
+      if (response != null) {
+        final imageUrl = response['image_url'] as String?;
         if (imageUrl != null) {
           final uri = Uri.parse(imageUrl);
           final pathSegments = uri.pathSegments;
@@ -400,7 +396,7 @@ class ArtistService extends ChangeNotifier {
         }
       }
 
-      await _supabase.from('artworks').delete().eq('id', artworkId).execute();
+      await _supabase.from('artworks').delete().eq('id', artworkId);
 
       notifyListeners();
       return true;
@@ -411,16 +407,14 @@ class ArtistService extends ChangeNotifier {
 
   Future<Artwork?> getArtworkById(String artworkId) async {
     try {
-      final response =
-          await _supabase
-              .from('artworks')
-              .select()
-              .eq('id', artworkId)
-              .single()
-              .execute();
+      final response = await _supabase
+          .from('artworks')
+          .select()
+          .eq('id', artworkId)
+          .single();
 
-      if (response.data != null) {
-        return Artwork.fromJson(response.data);
+      if (response != null) {
+        return Artwork.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -453,8 +447,7 @@ class ArtistService extends ChangeNotifier {
           .from('favorite_artworks')
           .delete()
           .eq('user_id', userId)
-          .eq('artwork_id', artworkId)
-          .execute();
+          .eq('artwork_id', artworkId);
 
       notifyListeners();
       return true;
@@ -465,15 +458,13 @@ class ArtistService extends ChangeNotifier {
 
   Future<bool> isArtworkInFavorites(String userId, String artworkId) async {
     try {
-      final response =
-          await _supabase
-              .from('favorite_artworks')
-              .select()
-              .eq('user_id', userId)
-              .eq('artwork_id', artworkId)
-              .execute();
+      final response = await _supabase
+          .from('favorite_artworks')
+          .select()
+          .eq('user_id', userId)
+          .eq('artwork_id', artworkId);
 
-      return response.data != null && (response.data as List).isNotEmpty;
+      return response != null && (response as List).isNotEmpty;
     } catch (e) {
       return false;
     }
@@ -504,29 +495,23 @@ class ArtistService extends ChangeNotifier {
           break;
       }
 
-      final artworksResponse =
-          await _supabase
-              .from('artworks')
-              .select('id')
-              .eq('artist_id', artistId)
-              .execute();
+      final artworksResponse = await _supabase
+          .from('artworks')
+          .select('id')
+          .eq('artist_id', artistId);
 
-      final totalArtworks =
-          artworksResponse.data != null
-              ? (artworksResponse.data as List).length
-              : 0;
+      final totalArtworks = artworksResponse != null 
+          ? (artworksResponse as List).length 
+          : 0;
 
-      final eventsResponse =
-          await _supabase
-              .from('events')
-              .select('id')
-              .eq('artist_id', artistId)
-              .execute();
+      final eventsResponse = await _supabase
+          .from('events')
+          .select('id')
+          .eq('artist_id', artistId);
 
-      final totalEvents =
-          eventsResponse.data != null
-              ? (eventsResponse.data as List).length
-              : 0;
+      final totalEvents = eventsResponse != null 
+          ? (eventsResponse as List).length 
+          : 0;
 
       final random = Random();
 
@@ -559,26 +544,23 @@ class ArtistService extends ChangeNotifier {
       List<TopArtwork> topArtworks = [];
 
       if (totalArtworks > 0) {
-        final artworksDetailResponse =
-            await _supabase
-                .from('artworks')
-                .select()
-                .eq('artist_id', artistId)
-                .limit(5)
-                .execute();
+        final artworksDetailResponse = await _supabase
+            .from('artworks')
+            .select()
+            .eq('artist_id', artistId)
+            .limit(5);
 
-        if (artworksDetailResponse.data != null) {
-          final artworksList = artworksDetailResponse.data as List;
-          topArtworks =
-              artworksList.map((artwork) {
-                return TopArtwork(
-                  id: artwork['id'],
-                  title: artwork['title'],
-                  imageUrl: artwork['image_url'],
-                  views: 50 + random.nextInt(200),
-                  favorites: 5 + random.nextInt(40),
-                );
-              }).toList();
+        if (artworksDetailResponse != null) {
+          final artworksList = artworksDetailResponse as List;
+          topArtworks = artworksList.map((artwork) {
+            return TopArtwork(
+              id: artwork['id'],
+              title: artwork['title'],
+              imageUrl: artwork['image_url'],
+              views: 50 + random.nextInt(200),
+              favorites: 5 + random.nextInt(40),
+            );
+          }).toList();
         }
       }
 
@@ -634,8 +616,86 @@ class ArtistService extends ChangeNotifier {
             'subscription_end_date': subscriptionEndDate?.toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           })
+          .eq('id', artistId);
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get artist profile by ID (different from user ID)
+  Future<ArtistProfile?> getArtistProfileById(String artistId) async {
+    try {
+      final response = await _supabase
+          .from('artist_profiles')
+          .select('*, profiles(*)')
           .eq('id', artistId)
-          .execute();
+          .single();
+
+      if (response != null) {
+        return ArtistProfile.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get artist's artwork collection
+  Future<List<Artwork>> getArtistArtwork(String artistId) async {
+    return getArtistArtworks(artistId); // Call existing method
+  }
+
+  // Check if an artist is in user's favorites
+  Future<bool> isArtistFavorite(String artistId) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return false;
+
+      final response = await _supabase
+          .from('favorite_artists')
+          .select()
+          .eq('user_id', user.id)
+          .eq('artist_id', artistId);
+
+      return response != null && (response as List).isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Add artist to favorites
+  Future<bool> addToFavorites(String artistId) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return false;
+
+      await _supabase.from('favorite_artists').insert({
+        'user_id': user.id,
+        'artist_id': artistId,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Remove artist from favorites
+  Future<bool> removeFromFavorites(String artistId) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return false;
+
+      await _supabase
+          .from('favorite_artists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('artist_id', artistId);
 
       notifyListeners();
       return true;

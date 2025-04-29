@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../services/artist_service.dart';
-import '../services/event_service.dart';
+import '../services/event_service.dart' as event_service;
 import '../services/auth_service.dart';
 import '../routing/route_names.dart';
 import '../core/themes/app_theme.dart';
@@ -47,7 +47,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
 
     try {
       final artistService = Provider.of<ArtistService>(context, listen: false);
-      final eventService = Provider.of<EventService>(context, listen: false);
+      final eventService = Provider.of<event_service.EventService>(context, listen: false);
 
       final artistProfile = await artistService.getArtistProfileById(
         widget.artistId,
@@ -63,9 +63,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
 
       if (mounted) {
         setState(() {
-          _artistProfile = artistProfile;
-          _upcomingEvents = upcomingEvents;
-          _artwork = artwork;
+          _artistProfile = artistProfile as ArtistProfile?;
+          _upcomingEvents = upcomingEvents.cast<Event>();
+          _artwork = artwork.cast<Artwork>();
           _isLoading = false;
         });
       }
@@ -110,7 +110,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
           content: Text('Please log in to save favorites'),
           action: SnackBarAction(
             label: 'Login',
-            onPressed: null, // You would navigate to login here
+            onPressed: _navigateToLogin,
           ),
         ),
       );
@@ -167,6 +167,10 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
     }
   }
 
+  void _navigateToLogin() {
+    Navigator.of(context).pushNamed(RouteNames.login);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -196,8 +200,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                                             begin: Alignment.topCenter,
                                             end: Alignment.bottomCenter,
                                             colors: [
-                                              AppColors.primaryColor
-                                                  .withOpacity(0.7),
+                                              AppColors.primaryColor.withOpacity(0.7),
                                               AppColors.primaryColor,
                                             ],
                                           ),
@@ -780,7 +783,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                       contentPadding: EdgeInsets.zero,
                       onTap: () => _openWebsite(entry.value),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),
@@ -799,34 +802,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
           ),
           icon: const Icon(Icons.chat_bubble_outline),
           label: const Text('Message Artist'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ElevatedButton.icon(
-          onPressed: () {
-            Navigator.of(context).pushNamed(
-              RouteNames.artistGallery,
-              arguments: {'artistId': _artistProfile!.id},
-            );
-          },
-          icon: const Icon(Icons.image),
-          label: const Text('Gallery'),
-        ),
-        ElevatedButton.icon(
-          onPressed: () {
-            Navigator.of(context).pushNamed(
-              RouteNames.events,
-              arguments: {'artistId': _artistProfile!.id},
-            );
-          },
-          icon: const Icon(Icons.event),
-          label: const Text('Events'),
         ),
       ],
     );

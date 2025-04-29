@@ -18,6 +18,8 @@ class Event {
   final String? imageUrl;
   final bool isPublic;
   final DateTime createdAt;
+  final String? artistName;
+  final String? artistImageUrl;
 
   Event({
     required this.id,
@@ -32,6 +34,8 @@ class Event {
     this.imageUrl,
     required this.isPublic,
     required this.createdAt,
+    this.artistName,
+    this.artistImageUrl,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -49,11 +53,13 @@ class Event {
       imageUrl: json['image_url'],
       isPublic: json['is_public'] ?? true,
       createdAt: DateTime.parse(json['created_at']),
+      artistName: json['artist_profiles']?['display_name'] ?? json['artist_profiles']?['name'],
+      artistImageUrl: json['artist_profiles']?['avatar_url'],
     );
   }
 }
 
-class EventService {
+class EventService extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   Future<List<Event>> getUpcomingEvents({
@@ -76,11 +82,11 @@ class EventService {
         queryBuilder = queryBuilder.eq('zip_code', zipCode);
       }
 
-      final response = await queryBuilder.execute();
+      final response = await queryBuilder;
 
-      if (response.data != null) {
+      if (response != null) {
         Logger.logInfo('Upcoming events fetched successfully');
-        return (response.data as List)
+        return (response as List)
             .map((item) => Event.fromJson(item))
             .toList();
       }
@@ -93,16 +99,14 @@ class EventService {
 
   Future<Event?> getEventDetails(String eventId) async {
     try {
-      final response =
-          await _supabase
-              .from('events')
-              .select('*, artist_profiles(*)')
-              .eq('id', eventId)
-              .single()
-              .execute();
+      final response = await _supabase
+          .from('events')
+          .select('*, artist_profiles(*)')
+          .eq('id', eventId)
+          .single();
 
-      if (response.data != null) {
-        return Event.fromJson(response.data);
+      if (response != null) {
+        return Event.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -127,10 +131,10 @@ class EventService {
         );
       }
 
-      final response = await queryBuilder.order('start_date').execute();
+      final response = await queryBuilder.order('start_date');
 
-      if (response.data != null) {
-        return (response.data as List)
+      if (response != null) {
+        return (response as List)
             .map((item) => Event.fromJson(item))
             .toList();
       }
@@ -226,8 +230,7 @@ class EventService {
             if (imageUrl != null) 'image_url': imageUrl,
             if (isPublic != null) 'is_public': isPublic,
           })
-          .eq('id', eventId)
-          .execute();
+          .eq('id', eventId);
 
       notifyListeners();
       return true;
@@ -238,7 +241,7 @@ class EventService {
 
   Future<bool> deleteEvent(String eventId) async {
     try {
-      await _supabase.from('events').delete().eq('id', eventId).execute();
+      await _supabase.from('events').delete().eq('id', eventId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -267,10 +270,10 @@ class EventService {
         queryBuilder = queryBuilder.eq('zip_code', zipCode);
       }
 
-      final response = await queryBuilder.execute();
+      final response = await queryBuilder;
 
-      if (response.data != null) {
-        return (response.data as List)
+      if (response != null) {
+        return (response as List)
             .map((item) => Event.fromJson(item))
             .toList();
       }
@@ -303,8 +306,7 @@ class EventService {
           .from('favorite_events')
           .delete()
           .eq('user_id', userId)
-          .eq('event_id', eventId)
-          .execute();
+          .eq('event_id', eventId);
 
       notifyListeners();
       return true;
@@ -316,16 +318,14 @@ class EventService {
   // Get user's favorite events
   Future<List<Event>> getUserFavoriteEvents(String userId) async {
     try {
-      final response =
-          await _supabase
-              .from('favorite_events')
-              .select('event_id, events(*)')
-              .eq('user_id', userId)
-              .order('created_at', ascending: false)
-              .execute();
+      final response = await _supabase
+          .from('favorite_events')
+          .select('event_id, events(*)')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
 
-      if (response.data != null) {
-        return (response.data as List)
+      if (response != null) {
+        return (response as List)
             .map((item) => Event.fromJson(item['events']))
             .toList();
       }
@@ -338,15 +338,13 @@ class EventService {
   // Check if an event is in user's favorites
   Future<bool> isEventInFavorites(String userId, String eventId) async {
     try {
-      final response =
-          await _supabase
-              .from('favorite_events')
-              .select()
-              .eq('user_id', userId)
-              .eq('event_id', eventId)
-              .execute();
+      final response = await _supabase
+          .from('favorite_events')
+          .select()
+          .eq('user_id', userId)
+          .eq('event_id', eventId);
 
-      return response.data != null && (response.data as List).isNotEmpty;
+      return response != null && (response as List).isNotEmpty;
     } catch (e) {
       return false;
     }
@@ -365,4 +363,92 @@ class EventService {
     // Log the unsubscription
     print('Stopped notifications for artist: $artistId');
   }
+
+  // Get a specific event by ID
+  Future<Event> getEventById(String eventId) async {
+    try {
+      final response = await _supabase
+          .from('events')
+          .select('*, artist_profiles(*)')
+          .eq('id', eventId)
+          .single();
+
+      if (response != null) {
+        return Event.fromJson(response);
+      }
+      throw Exception('Event not found');
+    } catch (e) {
+      throw Exception('Failed to load event: $e');
+    }
+  }
+  
+  // Get events with filters
+  Future<List<Event>> getEvents({
+    int? zipCode,
+    String? searchQuery,
+    DateTime? startDate,
+  }) async {
+    try {
+      var queryBuilder = _supabase
+          .from('events')
+          .select('*, artist_profiles(*)')
+          .eq('is_public', true);
+
+      if (zipCode != null) {
+        queryBuilder = queryBuilder.eq('zip_code', zipCode);
+      }
+      
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryBuilder = queryBuilder.ilike('title', '%$searchQuery%');
+      }
+      
+      if (startDate != null) {
+        final startOfDay = DateTime(startDate.year, startDate.month, startDate.day);
+        final endOfDay = startOfDay.add(const Duration(days: 1));
+        queryBuilder = queryBuilder
+            .gte('start_date', startOfDay.toIso8601String())
+            .lt('start_date', endOfDay.toIso8601String());
+      }
+
+      final response = await queryBuilder.order('start_date');
+
+      if (response != null) {
+        final List<Event> events = (response as List)
+            .map((item) => Event.fromJson(item))
+            .toList();
+            
+        // Add artistName and artistImageUrl from artist_profiles
+        for (var i = 0; i < events.length; i++) {
+          final event = events[i];
+          final artistProfile = (response as List)[i]['artist_profiles'];
+          if (artistProfile != null) {
+            events[i] = Event(
+              id: event.id,
+              title: event.title,
+              description: event.description,
+              startDate: event.startDate,
+              endDate: event.endDate,
+              location: event.location,
+              latitude: event.latitude,
+              longitude: event.longitude,
+              artistId: event.artistId,
+              imageUrl: event.imageUrl,
+              isPublic: event.isPublic,
+              createdAt: event.createdAt,
+              artistName: artistProfile['display_name'] ?? artistProfile['name'],
+              artistImageUrl: artistProfile['avatar_url'],
+            );
+          }
+        }
+        
+        return events;
+      }
+      return [];
+    } catch (e, stackTrace) {
+      Logger.logError('Error fetching events', e, stackTrace);
+      return [];
+    }
+  }
+
+  final Uuid _uuid = const Uuid();
 }

@@ -453,4 +453,80 @@ class LocationService extends ChangeNotifier {
       throw Exception('Error searching art locations: $e');
     }
   }
+
+  /// Get nearby art locations within a specified radius
+  Future<List<ArtLocation>> getNearbyArtLocations({
+    required double latitude,
+    required double longitude,
+    required double radiusKm,
+  }) async {
+    // In a real app, you would fetch this from an API or database
+    // For now, return mock data
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+    
+    return _getMockArtLocations().where((location) {
+      // Calculate distance between points (simplified for example)
+      final latDiff = location.latitude - latitude;
+      final lngDiff = location.longitude - longitude;
+      // Simple approximation of distance in km (not accurate for large distances)
+      final distance = 111.0 * sqrt(latDiff * latDiff + lngDiff * lngDiff);
+      return distance <= radiusKm;
+    }).toList();
+  }
+
+  /// Get art locations by zip code
+  Future<List<ArtLocation>> getArtLocationsByZipCode(int zipCode) async {
+    // In a real app, you would fetch this from an API or database
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+    
+    // This is mock data that pretends to filter by zip code
+    // In a real app, you would have a proper zip code lookup service
+    return _getMockArtLocations();
+  }
+
+  // Helper method to generate mock art locations
+  List<ArtLocation> _getMockArtLocations() {
+    // Return some mock art locations for development purposes
+    return [
+      ArtLocation(
+        id: 'art1',
+        title: 'Urban Mural Project',
+        description: 'A beautiful mural depicting city life',
+        latitude: 37.7749,
+        longitude: -122.4194,
+        imageUrl: 'https://example.com/mural.jpg',
+        artistId: 'artist1',
+        artistName: 'Jane Doe',
+        tags: ['mural', 'urban', 'contemporary'],
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+        isPubliclyVisible: true,
+      ),
+      ArtLocation(
+        id: 'art2',
+        title: 'City Park Sculpture',
+        description: 'Modern abstract sculpture in the heart of the city',
+        latitude: 37.7739,
+        longitude: -122.4312,
+        imageUrl: 'https://example.com/sculpture.jpg',
+        artistId: 'artist2',
+        artistName: 'John Smith',
+        tags: ['sculpture', 'abstract', 'park'],
+        createdAt: DateTime.now().subtract(const Duration(days: 45)),
+        isPubliclyVisible: true,
+      ),
+      ArtLocation(
+        id: 'art3',
+        title: 'Historical Monument',
+        description: 'Bronze statue commemorating city founders',
+        latitude: 37.7833,
+        longitude: -122.4167,
+        imageUrl: 'https://example.com/monument.jpg',
+        artistId: 'artist3',
+        artistName: 'Classical Arts Group',
+        tags: ['monument', 'historical', 'bronze'],
+        createdAt: DateTime.now().subtract(const Duration(days: 365)),
+        isPubliclyVisible: true,
+      ),
+    ];
+  }
 }

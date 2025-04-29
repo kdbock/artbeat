@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../routing/route_names.dart';
 import '../core/themes/app_theme.dart';
 import '../widgets/favorite_button.dart';
+import '../services/event_service.dart';
 
 class EventsScreen extends StatefulWidget {
   @override
@@ -507,7 +508,7 @@ class _EventsScreenState extends State<EventsScreen>
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(20),
-                        },
+                        ),
                         padding: const EdgeInsets.all(4),
                         child: FavoriteButton(
                           eventId: event.id,

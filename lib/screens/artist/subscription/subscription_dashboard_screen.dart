@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:stripe_payment/stripe_payment.dart';
-import '../../../services/auth_service.dart';
+import 'package:logger/logger.dart' show Logger, Level;
+import '../../../services/auth_service.dart' as auth;
 import '../../../services/artist_service.dart';
 import '../../../core/themes/app_theme.dart';
 
@@ -36,7 +37,7 @@ class _SubscriptionDashboardScreenState
     });
 
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
+      final authService = Provider.of<auth.AuthService>(context, listen: false);
       final artistService = Provider.of<ArtistService>(context, listen: false);
 
       if (!authService.isArtist) {
@@ -63,8 +64,8 @@ class _SubscriptionDashboardScreenState
 
       if (mounted) {
         setState(() {
-          _artistProfile = artistProfile;
-          _analytics = analytics;
+          _artistProfile = artistProfile as ArtistProfile?;
+          _analytics = analytics as ArtistAnalytics?;
           _isLoading = false;
         });
       }
@@ -84,8 +85,9 @@ class _SubscriptionDashboardScreenState
         CardFormPaymentRequest(),
       );
 
-      // Log the payment method ID (for backend use)
-      print('Payment method created: ${paymentMethod.id}');
+      // Use a logger instead of print
+      final logger = Logger();
+      logger.log(Level.info, 'Payment method created: ${paymentMethod.id}');
 
       // Here, you would typically send the paymentMethod.id to your backend
       // to create a PaymentIntent and confirm the payment.
@@ -94,6 +96,8 @@ class _SubscriptionDashboardScreenState
       await Future.delayed(const Duration(seconds: 2));
 
       // Update subscription status locally
+      if (!mounted) return;
+      
       final artistService = Provider.of<ArtistService>(context, listen: false);
       final success = await artistService.updateSubscriptionStatus(
         _artistProfile!.id,
@@ -109,9 +113,11 @@ class _SubscriptionDashboardScreenState
         throw Exception('Failed to update subscription status');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment failed: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payment failed: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -138,8 +144,7 @@ class _SubscriptionDashboardScreenState
             const SizedBox(height: 16),
             _buildSubscriptionPlan(
               'Pro',
-              '
-$9.99/month',
+              '\$9.99/month', // Fix the string
               [
                 'Unlimited artwork listings',
                 'Featured in discover section',
@@ -152,8 +157,7 @@ $9.99/month',
             const SizedBox(height: 16),
             _buildSubscriptionPlan(
               'Business',
-              '
-$24.99/month',
+              '\$24.99/month',
               [
                 'Everything in Pro plan',
                 'Gallery management tools',
@@ -781,7 +785,7 @@ $24.99/month',
           color: Colors.blue,
           barWidth: 3,
           isStrokeCapRound: true,
-          dotData: FlDotData(show: false),
+          dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
             color: Colors.blue.withOpacity(0.1),
@@ -793,7 +797,7 @@ $24.99/month',
           color: Colors.purple,
           barWidth: 3,
           isStrokeCapRound: true,
-          dotData: FlDotData(show: false),
+          dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
             color: Colors.purple.withOpacity(0.1),

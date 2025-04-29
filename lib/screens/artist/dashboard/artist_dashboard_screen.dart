@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/artist_service.dart';
+import '../../../services/artist_service.dart' as artist_service;
 import '../../../routing/route_names.dart';
-import '../../../core/themes/app_theme.dart';
 
 class ArtistDashboardScreen extends StatefulWidget {
   const ArtistDashboardScreen({super.key});
@@ -162,11 +161,11 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
                   radius: 36,
                   backgroundColor: Colors.grey[200],
                   backgroundImage:
-                      _artistProfile?.profileImageUrl != null
-                          ? NetworkImage(_artistProfile!.profileImageUrl!)
+                      _artistProfile?.avatarUrl != null
+                          ? NetworkImage(_artistProfile!.avatarUrl!)
                           : null,
                   child:
-                      _artistProfile?.profileImageUrl == null
+                      _artistProfile?.avatarUrl == null
                           ? const Icon(
                             Icons.person,
                             size: 40,
@@ -187,7 +186,7 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
                       Consumer<AuthService>(
                         builder:
                             (context, authService, _) => Text(
-                              authService.currentUser?.displayName ?? 'Artist',
+                              authService.currentUser?.email ?? 'Artist',
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -219,11 +218,11 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            if (_artistProfile!.bio.isNotEmpty) ...[
+            if (_artistProfile!.bio?.isNotEmpty == true) ...[
               const Divider(),
               const SizedBox(height: 8),
               Text(
-                _artistProfile!.bio,
+                _artistProfile!.bio!,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.grey[800]),
@@ -236,7 +235,7 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
   }
 
   Widget _buildQuickMetricsSection() {
-    return Consumer<ArtistService>(
+    return Consumer<artist_service.ArtistService>(
       builder: (context, artistService, _) {
         return FutureBuilder<ArtistAnalytics>(
           future: artistService.getArtistAnalytics(_artistProfile!.id),
@@ -380,7 +379,8 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircleAvatar(
-                backgroundColor: color.withOpacity(0.2),
+                backgroundColor: Color.fromRGBO(
+                    color.r, color.g, color.b, 0.2),
                 radius: 28,
                 child: Icon(icon, color: color, size: 32),
               ),
@@ -419,4 +419,18 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
         return Colors.grey;
     }
   }
+}
+
+class ArtistAnalytics {
+  final int profileViews;
+  final int artworkViews;
+  final int totalArtworks;
+  final int totalEvents;
+
+  ArtistAnalytics({
+    required this.profileViews,
+    required this.artworkViews,
+    required this.totalArtworks,
+    required this.totalEvents,
+  });
 }
