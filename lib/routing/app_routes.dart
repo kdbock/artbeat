@@ -48,17 +48,19 @@ class AppRoutes {
         final artistId = args?['artistId'] as String?;
         if (artistId == null) return null;
 
-        return MaterialPageRoute(
-          builder: (context) => ArtistProfileScreen(artistId: artistId),
-        );
+        return PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              ArtistProfileScreen(artistId: artistId),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.ease;
 
-      case RouteNames.artDetails:
-        final args = settings.arguments as Map<String, dynamic>?;
-        final artId = args?['artId'] as String?;
-        if (artId == null) return null;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
 
-        return MaterialPageRoute(
-          builder: (context) => ArtDetailsScreen(artId: artId),
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
         );
 
       case RouteNames.eventDetails:
@@ -66,22 +68,19 @@ class AppRoutes {
         final eventId = args?['eventId'] as String?;
         if (eventId == null) return null;
 
-        return MaterialPageRoute(
-          builder: (context) => EventDetailsScreen(eventId: eventId),
-        );
+        return PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              EventDetailsScreen(eventId: eventId),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.ease;
 
-      case RouteNames.createEvent:
-        return MaterialPageRoute(
-          builder: (context) => const CreateEventScreen(),
-        );
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
 
-      case RouteNames.artistGallery:
-        final args = settings.arguments as Map<String, dynamic>?;
-        final artistId = args?['artistId'] as String?;
-        if (artistId == null) return null;
-
-        return MaterialPageRoute(
-          builder: (context) => const GalleryManagementScreen(),
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
         );
 
       case RouteNames.createWalkingTour:
@@ -90,14 +89,16 @@ class AppRoutes {
         if (artLocationIds == null) return null;
 
         return MaterialPageRoute(
-          builder:
-              (context) =>
-                  CreateWalkingTourScreen(artLocationIds: artLocationIds),
+          builder: (context) => CreateWalkingTourScreen(artLocationIds: artLocationIds),
         );
 
-      case RouteNames.artistSubscriptionDashboard:
+      case RouteNames.artistGallery:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final artistId = args?['artistId'] as String?;
+        if (artistId == null) return null;
+
         return MaterialPageRoute(
-          builder: (context) => const SubscriptionDashboardScreen(),
+          builder: (context) => GalleryManagementScreen(),
         );
 
       default:

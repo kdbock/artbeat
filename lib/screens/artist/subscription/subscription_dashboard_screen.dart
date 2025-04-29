@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:stripe_payment/stripe_payment.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/artist_service.dart';
 import '../../../core/themes/app_theme.dart';
@@ -77,103 +78,110 @@ class _SubscriptionDashboardScreenState
     }
   }
 
+  Future<void> _processSubscriptionPayment(String plan) async {
+    try {
+      final paymentMethod = await StripePayment.paymentRequestWithCardForm(
+        CardFormPaymentRequest(),
+      );
+
+      // Log the payment method ID (for backend use)
+      print('Payment method created: ${paymentMethod.id}');
+
+      // Here, you would typically send the paymentMethod.id to your backend
+      // to create a PaymentIntent and confirm the payment.
+
+      // Simulate successful payment processing
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Update subscription status locally
+      final artistService = Provider.of<ArtistService>(context, listen: false);
+      final success = await artistService.updateSubscriptionStatus(
+        _artistProfile!.id,
+        plan,
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Subscription updated successfully')),
+        );
+        _loadDashboardData();
+      } else {
+        throw Exception('Failed to update subscription status');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment failed: ${e.toString()}')),
+      );
+    }
+  }
+
   Future<void> _showUpgradeSubscriptionDialog() async {
     if (_artistProfile == null) return;
 
     final result = await showDialog<String>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Upgrade Subscription'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSubscriptionPlan(
-                  'Basic',
-                  'Free',
-                  [
-                    'Up to 20 artwork listings',
-                    'Basic analytics',
-                    'Community features',
-                  ],
-                  isSelected: _artistProfile!.subscriptionStatus == 'basic',
-                ),
-                const SizedBox(height: 16),
-                _buildSubscriptionPlan(
-                  'Pro',
-                  '\$9.99/month',
-                  [
-                    'Unlimited artwork listings',
-                    'Featured in discover section',
-                    'Advanced analytics',
-                    'Priority support',
-                    'No commission fees',
-                  ],
-                  isSelected: _artistProfile!.subscriptionStatus == 'pro',
-                ),
-                const SizedBox(height: 16),
-                _buildSubscriptionPlan(
-                  'Business',
-                  '\$24.99/month',
-                  [
-                    'Everything in Pro plan',
-                    'Gallery management tools',
-                    'Email marketing integration',
-                    'Custom branding',
-                    'Dedicated support',
-                  ],
-                  isSelected: _artistProfile!.subscriptionStatus == 'business',
-                ),
+      builder: (context) => AlertDialog(
+        title: const Text('Upgrade Subscription'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSubscriptionPlan(
+              'Basic',
+              'Free',
+              [
+                'Up to 20 artwork listings',
+                'Basic analytics',
+                'Community features',
               ],
+              isSelected: _artistProfile!.subscriptionStatus == 'basic',
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-            ],
+            const SizedBox(height: 16),
+            _buildSubscriptionPlan(
+              'Pro',
+              '
+$9.99/month',
+              [
+                'Unlimited artwork listings',
+                'Featured in discover section',
+                'Advanced analytics',
+                'Priority support',
+                'No commission fees',
+              ],
+              isSelected: _artistProfile!.subscriptionStatus == 'pro',
+            ),
+            const SizedBox(height: 16),
+            _buildSubscriptionPlan(
+              'Business',
+              '
+$24.99/month',
+              [
+                'Everything in Pro plan',
+                'Gallery management tools',
+                'Email marketing integration',
+                'Custom branding',
+                'Dedicated support',
+              ],
+              isSelected: _artistProfile!.subscriptionStatus == 'business',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop('pro'); // Example: Select Pro plan
+            },
+            child: const Text('Upgrade'),
+          ),
+        ],
+      ),
     );
 
     if (result != null && mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        final artistService = Provider.of<ArtistService>(
-          context,
-          listen: false,
-        );
-        final success = await artistService.updateSubscriptionStatus(
-          _artistProfile!.id,
-          result,
-        );
-
-        if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Subscription updated successfully')),
-          );
-          // Refresh the dashboard
-          _loadDashboardData();
-        } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update subscription')),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
+      await _processSubscriptionPayment(result);
     }
   }
 

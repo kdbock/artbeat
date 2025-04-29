@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.artbeat"
+    namespace = "com.wordnerd.artbeat"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

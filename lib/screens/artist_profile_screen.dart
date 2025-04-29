@@ -803,6 +803,34 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
       ],
     );
   }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pushNamed(
+              RouteNames.artistGallery,
+              arguments: {'artistId': _artistProfile!.id},
+            );
+          },
+          icon: const Icon(Icons.image),
+          label: const Text('Gallery'),
+        ),
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pushNamed(
+              RouteNames.events,
+              arguments: {'artistId': _artistProfile!.id},
+            );
+          },
+          icon: const Icon(Icons.event),
+          label: const Text('Events'),
+        ),
+      ],
+    );
+  }
 }
 
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {

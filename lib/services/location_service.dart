@@ -320,27 +320,19 @@ class LocationService extends ChangeNotifier {
         'id': tourId,
         'title': title,
         'description': description,
+        'image_url': imageUrl,
         'creator_id': creatorId,
         'creator_name': creatorName,
-        'image_url': imageUrl,
+        'art_location_ids': locationIds,
         'total_distance_km': totalDistanceKm,
         'estimated_minutes': estimatedMinutes,
         'is_public': isPublic,
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // Create tour-location relationships in the junction table
-      for (int i = 0; i < locationIds.length; i++) {
-        await _supabase.from('tour_locations').insert({
-          'tour_id': tourId,
-          'location_id': locationIds[i],
-          'stop_order': i + 1,
-        });
-      }
-
-      notifyListeners();
       return true;
     } catch (e) {
+      Logger.logError('Error creating walking tour', e);
       return false;
     }
   }

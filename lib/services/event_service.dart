@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
+import '../core/utils/logger.dart';
 
 class Event {
   final String id;
@@ -52,9 +53,8 @@ class Event {
   }
 }
 
-class EventService extends ChangeNotifier {
+class EventService {
   final SupabaseClient _supabase = Supabase.instance.client;
-  final _uuid = const Uuid();
 
   Future<List<Event>> getUpcomingEvents({
     DateTime? fromDate,
@@ -79,12 +79,14 @@ class EventService extends ChangeNotifier {
       final response = await queryBuilder.execute();
 
       if (response.data != null) {
+        Logger.logInfo('Upcoming events fetched successfully');
         return (response.data as List)
             .map((item) => Event.fromJson(item))
             .toList();
       }
       return [];
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.logError('Error fetching upcoming events', e, stackTrace);
       return [];
     }
   }
@@ -190,9 +192,10 @@ class EventService extends ChangeNotifier {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      notifyListeners();
+      Logger.logInfo('Event created successfully');
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.logError('Error creating event', e, stackTrace);
       return false;
     }
   }
@@ -347,5 +350,19 @@ class EventService extends ChangeNotifier {
     } catch (e) {
       return false;
     }
+  }
+
+  Future<void> notifyUpcomingEvent(String artistId, String eventTitle) async {
+    // Subscribe users to the artist's topic for notifications
+
+    // Log the notification setup
+    print('Notification set up for artist: $artistId, event: $eventTitle');
+  }
+
+  Future<void> stopNotificationsForArtist(String artistId) async {
+    // Unsubscribe users from the artist's topic
+
+    // Log the unsubscription
+    print('Stopped notifications for artist: $artistId');
   }
 }

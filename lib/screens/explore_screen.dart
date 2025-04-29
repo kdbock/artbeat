@@ -60,7 +60,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Explore Artists'), elevation: 0),
+      appBar: AppBar(
+        title: const Text('Explore Artists'),
+        elevation: 0,
+      ),
       body: Column(
         children: [
           Padding(
@@ -78,12 +81,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         _searchController.clear();
                         _loadArtists();
                       },
+                      tooltip: 'Clear search',
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onSubmitted: (_) => _loadArtists(),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -127,6 +130,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         padding: const EdgeInsets.all(12),
                       ),
                       child: const Icon(Icons.refresh),
+                      tooltip: 'Refresh artist list',
                     ),
                   ],
                 ),
@@ -134,188 +138,84 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
           ),
           Expanded(
-            child:
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _artists.isEmpty
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _artists.isEmpty
                     ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            size: 80,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No artists found',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[600],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off_rounded,
+                              size: 80,
+                              color: Colors.grey[400],
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Try different search terms or remove filters',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-                    )
-                    : ListView.builder(
-                      itemCount: _artists.length,
-                      padding: const EdgeInsets.all(16),
-                      itemBuilder: (context, index) {
-                        final artist = _artists[index];
-                        return ArtistCard(artist: artist);
-                      },
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ArtistCard extends StatelessWidget {
-  final ArtistProfile artist;
-
-  const ArtistCard({super.key, required this.artist});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 4,
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).pushNamed(
-            RouteNames.artistProfile,
-            arguments: {'artistId': artist.id},
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Artist banner
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child:
-                  artist.bannerImageUrl != null
-                      ? Image.network(
-                        artist.bannerImageUrl!,
-                        width: double.infinity,
-                        height: 150,
-                        fit: BoxFit.cover,
-                        errorBuilder:
-                            (_, __, ___) => Container(
-                              width: double.infinity,
-                              height: 100,
-                              color: AppColors.primaryColor.withOpacity(0.2),
-                              child: const Center(
-                                child: Icon(Icons.broken_image, size: 50),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No artists found',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[600],
                               ),
                             ),
-                      )
-                      : Container(
-                        width: double.infinity,
-                        height: 100,
-                        color: AppColors.primaryColor.withOpacity(0.2),
-                        child: const Center(child: Icon(Icons.image, size: 50)),
-                      ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Profile image
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundImage:
-                        artist.profileImageUrl != null
-                            ? NetworkImage(artist.profileImageUrl!)
-                            : null,
-                    backgroundColor: AppColors.accentColor.withOpacity(0.2),
-                    child:
-                        artist.profileImageUrl == null
-                            ? const Icon(Icons.person, size: 40)
-                            : null,
-                  ),
-                  const SizedBox(width: 16),
-                  // Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Artist Name',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (artist.website != null)
-                          Text(
-                            artist.website!,
-                            style: TextStyle(
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try different search terms or remove filters',
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
-                          ),
-                        const SizedBox(height: 8),
-                        Text(
-                          artist.bio,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[700]),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        RouteNames.artistGallery,
-                        arguments: {'artistId': artist.id},
-                      );
-                    },
-                    icon: const Icon(Icons.image),
-                    label: const Text('Gallery'),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        RouteNames.artistCalendar,
-                        arguments: {'artistId': artist.id},
-                      );
-                    },
-                    icon: const Icon(Icons.event),
-                    label: const Text('Events'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _artists.length,
+                        padding: const EdgeInsets.all(16),
+                        itemBuilder: (context, index) {
+                          final artist = _artists[index];
+                          return Semantics(
+                            label: 'Artist card for ${artist.name}',
+                            child: Card(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 4,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
+                                    RouteNames.artistProfile,
+                                    arguments: {'artistId': artist.id},
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        artist.name,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        artist.bio,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(color: Colors.grey[700]),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../services/event_service.dart';
 import '../services/auth_service.dart';
 import '../routing/route_names.dart';
@@ -8,10 +9,8 @@ import '../core/themes/app_theme.dart';
 import '../widgets/favorite_button.dart';
 
 class EventsScreen extends StatefulWidget {
-  const EventsScreen({super.key});
-
   @override
-  State<EventsScreen> createState() => _EventsScreenState();
+  _EventsScreenState createState() => _EventsScreenState();
 }
 
 class _EventsScreenState extends State<EventsScreen>
@@ -20,15 +19,41 @@ class _EventsScreenState extends State<EventsScreen>
   bool _isLoading = true;
   List<Event> _upcomingEvents = [];
   List<Event> _pastEvents = [];
+  List<Event> _recommendedEvents = [];
   int? _zipCode;
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
+  String? _selectedCategory;
+  List<String> _categories = ['All', 'Art', 'Music', 'Workshops', 'Exhibitions'];
+  String? _selectedSortOption;
+  final List<String> _sortOptions = ['Popularity', 'Date', 'Proximity'];
+
+  Future<void> _loadRecommendations() async {
+    try {
+      final eventService = Provider.of<EventService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.currentUserId;
+
+      if (userId != null) {
+        final recommendations = await eventService.getUserFavoriteEvents(userId);
+        setState(() {
+          _recommendedEvents = recommendations.take(5).toList(); // Limit to 5 recommendations
+        });
+      }
+    } catch (e) {
+      // Handle errors gracefully
+      setState(() {
+        _recommendedEvents = [];
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadEvents();
+    _loadRecommendations();
   }
 
   @override
@@ -75,7 +100,15 @@ class _EventsScreenState extends State<EventsScreen>
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading events: ${e.toString()}')),
+          SnackBar(
+            content: Text(
+              'Failed to load events. Please check your connection and try again.',
+            ),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: _loadEvents,
+            ),
+          ),
         );
       }
     }
@@ -130,63 +163,143 @@ class _EventsScreenState extends State<EventsScreen>
       ),
       body: Column(
         children: [
-          // Search and filter section
+          // Recommendations section
+          if (_recommendedEvents.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Recommended for You',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 150,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _recommendedEvents.length,
+                      itemBuilder: (context, index) {
+                        final event = _recommendedEvents[index];
+                        return Card(
+                          margin: const EdgeInsets.only(right: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pushNamed(
+                                RouteNames.eventDetails,
+                                arguments: {'eventId': event.id},
+                              );
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Event image
+                                if (event.imageUrl != null)
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(12),
+                                    ),
+                                    child: Image.network(
+                                      event.imageUrl!,
+                                      height: 100,
+                                      width: 150,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    event.title,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Search, filter, and category section
           Container(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search events...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon:
-                        _searchController.text.isNotEmpty ||
-                                _zipCode != null ||
-                                _selectedDate != null
-                            ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: _clearFilters,
-                            )
-                            : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search events...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.filter_list),
+                            onPressed: () => _showFilterDialog(),
+                          ),
+                        ),
+                        onSubmitted: (_) => _loadEvents(),
+                      ),
                     ),
-                  ),
-                  onSubmitted: (_) => _loadEvents(),
+                    DropdownButton<String>(
+                      value: _selectedSortOption,
+                      hint: const Text('Sort by'),
+                      items: _sortOptions.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child: Text(option),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSortOption = value;
+                        });
+                        _loadEvents();
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
-                        keyboardType: TextInputType.number,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCategory,
+                        items: _categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategory = value;
+                          });
+                          _loadEvents();
+                        },
                         decoration: InputDecoration(
-                          hintText: 'Filter by ZIP Code',
-                          prefixIcon: const Icon(Icons.location_on_outlined),
+                          hintText: 'Select Category',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 16,
-                          ),
                         ),
-                        onChanged: (value) {
-                          if (value.length == 5) {
-                            try {
-                              _zipCode = int.parse(value);
-                              _loadEvents();
-                            } catch (e) {
-                              // Invalid zip code, ignore
-                            }
-                          } else if (value.isEmpty) {
-                            setState(() {
-                              _zipCode = null;
-                            });
-                            _loadEvents();
-                          }
-                        },
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -207,19 +320,28 @@ class _EventsScreenState extends State<EventsScreen>
                             : DateFormat('MM/dd').format(_selectedDate!),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _loadEvents,
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.all(12),
-                      ),
-                      child: const Icon(Icons.refresh),
-                    ),
                   ],
                 ),
               ],
             ),
+          ),
+
+          // Calendar view
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: DateTime.now(),
+            eventLoader: (day) {
+              return _upcomingEvents
+                  .where((event) => isSameDay(event.startDate, day))
+                  .toList();
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDate = selectedDay;
+              });
+              _loadEvents();
+            },
           ),
 
           // Events list
@@ -255,6 +377,39 @@ class _EventsScreenState extends State<EventsScreen>
                 child: const Icon(Icons.add, color: Colors.white),
               )
               : null,
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Filters'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Add filter options here (e.g., date range, artist, event type)
+              TextField(
+                decoration: const InputDecoration(labelText: 'Event Type'),
+                onChanged: (value) {
+                  // Handle filter input
+                },
+              ),
+              // Additional filters can be added here
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _loadEvents();
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -352,7 +507,7 @@ class _EventsScreenState extends State<EventsScreen>
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(20),
-                        ),
+                        },
                         padding: const EdgeInsets.all(4),
                         child: FavoriteButton(
                           eventId: event.id,
