@@ -37,10 +37,10 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
       context,
       listen: false,
     );
-    
+
     try {
       final position = await locationService.getCurrentLocation();
-      
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -48,12 +48,15 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
 
         _mapController?.animateCamera(
           CameraUpdate.newLatLngZoom(
-            LatLng(position.latitude, position.longitude),
+            LatLng(position.latitude ?? _defaultLocation.latitude, position.longitude ?? _defaultLocation.longitude),
             14.0,
           ),
         );
 
-        await _loadNearbyArtLocations(position.latitude, position.longitude);
+        await _loadNearbyArtLocations(
+          position.latitude ?? _defaultLocation.latitude,
+          position.longitude ?? _defaultLocation.longitude,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -61,9 +64,7 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error getting location: ${e.toString()}'),
-          ),
+          SnackBar(content: Text('Error getting location: ${e.toString()}')),
         );
       }
     }
@@ -375,7 +376,7 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withAlpha((0.3 * 255).toInt()),
               child: const Center(child: CircularProgressIndicator()),
             ),
           // ZIP code search box
@@ -389,7 +390,7 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withAlpha((0.1 * 255).toInt()),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -432,7 +433,7 @@ class _ArtMapScreenState extends State<ArtMapScreen> {
                   horizontal: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.9),
+                  color: AppColors.primaryColor.withAlpha((0.9 * 255).toInt()),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(

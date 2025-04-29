@@ -16,6 +16,9 @@ class ArtistProfile {
   final DateTime createdAt;
   final String subscriptionStatus;
   final DateTime? subscriptionEndDate;
+  final String? displayName;
+  final String? email;
+  final String? location;
 
   ArtistProfile({
     required this.id,
@@ -28,22 +31,34 @@ class ArtistProfile {
     required this.createdAt,
     required this.subscriptionStatus,
     this.subscriptionEndDate,
+    this.displayName,
+    this.email,
+    this.location,
   });
 
   factory ArtistProfile.fromJson(Map<String, dynamic> json) {
+    final profiles = json['profiles'] ?? {};
     return ArtistProfile(
       id: json['id'],
       userId: json['user_id'],
-      bio: json['bio'],
+      bio: json['bio'] ?? '',
       website: json['website'],
       socialMedia: json['social_media'],
       profileImageUrl: json['profile_image_url'],
       bannerImageUrl: json['banner_image_url'],
       createdAt: DateTime.parse(json['created_at']),
-      subscriptionStatus: json['subscription_status'],
-      subscriptionEndDate: json['subscription_end_date'] != null 
-          ? DateTime.parse(json['subscription_end_date']) 
-          : null,
+      subscriptionStatus: json['subscription_status'] ?? 'basic',
+      subscriptionEndDate:
+          json['subscription_end_date'] != null
+              ? DateTime.parse(json['subscription_end_date'])
+              : null,
+      displayName:
+          json['display_name'] ??
+          profiles['display_name'] ??
+          profiles['full_name'] ??
+          profiles['name'],
+      email: json['email'] ?? profiles['email'],
+      location: json['location'] ?? profiles['location'],
     );
   }
 }
@@ -147,11 +162,12 @@ class ArtistService extends ChangeNotifier {
 
   Future<ArtistProfile?> getArtistProfile(String userId) async {
     try {
-      final response = await _supabase
-          .from('artist_profiles')
-          .select()
-          .eq('user_id', userId)
-          .single();
+      final response =
+          await _supabase
+              .from('artist_profiles')
+              .select()
+              .eq('user_id', userId)
+              .single();
 
       if (response != null) {
         return ArtistProfile.fromJson(response);
@@ -378,11 +394,12 @@ class ArtistService extends ChangeNotifier {
 
   Future<bool> deleteArtwork(String artworkId) async {
     try {
-      final response = await _supabase
-          .from('artworks')
-          .select('image_url')
-          .eq('id', artworkId)
-          .single();
+      final response =
+          await _supabase
+              .from('artworks')
+              .select('image_url')
+              .eq('id', artworkId)
+              .single();
 
       if (response != null) {
         final imageUrl = response['image_url'] as String?;
@@ -407,11 +424,12 @@ class ArtistService extends ChangeNotifier {
 
   Future<Artwork?> getArtworkById(String artworkId) async {
     try {
-      final response = await _supabase
-          .from('artworks')
-          .select()
-          .eq('id', artworkId)
-          .single();
+      final response =
+          await _supabase
+              .from('artworks')
+              .select()
+              .eq('id', artworkId)
+              .single();
 
       if (response != null) {
         return Artwork.fromJson(response);
@@ -500,18 +518,16 @@ class ArtistService extends ChangeNotifier {
           .select('id')
           .eq('artist_id', artistId);
 
-      final totalArtworks = artworksResponse != null 
-          ? (artworksResponse as List).length 
-          : 0;
+      final totalArtworks =
+          artworksResponse != null ? (artworksResponse as List).length : 0;
 
       final eventsResponse = await _supabase
           .from('events')
           .select('id')
           .eq('artist_id', artistId);
 
-      final totalEvents = eventsResponse != null 
-          ? (eventsResponse as List).length 
-          : 0;
+      final totalEvents =
+          eventsResponse != null ? (eventsResponse as List).length : 0;
 
       final random = Random();
 
@@ -552,15 +568,16 @@ class ArtistService extends ChangeNotifier {
 
         if (artworksDetailResponse != null) {
           final artworksList = artworksDetailResponse as List;
-          topArtworks = artworksList.map((artwork) {
-            return TopArtwork(
-              id: artwork['id'],
-              title: artwork['title'],
-              imageUrl: artwork['image_url'],
-              views: 50 + random.nextInt(200),
-              favorites: 5 + random.nextInt(40),
-            );
-          }).toList();
+          topArtworks =
+              artworksList.map((artwork) {
+                return TopArtwork(
+                  id: artwork['id'],
+                  title: artwork['title'],
+                  imageUrl: artwork['image_url'],
+                  views: 50 + random.nextInt(200),
+                  favorites: 5 + random.nextInt(40),
+                );
+              }).toList();
         }
       }
 
@@ -628,11 +645,12 @@ class ArtistService extends ChangeNotifier {
   // Get artist profile by ID (different from user ID)
   Future<ArtistProfile?> getArtistProfileById(String artistId) async {
     try {
-      final response = await _supabase
-          .from('artist_profiles')
-          .select('*, profiles(*)')
-          .eq('id', artistId)
-          .single();
+      final response =
+          await _supabase
+              .from('artist_profiles')
+              .select('*, profiles(*)')
+              .eq('id', artistId)
+              .single();
 
       if (response != null) {
         return ArtistProfile.fromJson(response);

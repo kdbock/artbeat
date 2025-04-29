@@ -47,7 +47,10 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
 
     try {
       final artistService = Provider.of<ArtistService>(context, listen: false);
-      final eventService = Provider.of<event_service.EventService>(context, listen: false);
+      final eventService = Provider.of<event_service.EventService>(
+        context,
+        listen: false,
+      );
 
       final artistProfile = await artistService.getArtistProfileById(
         widget.artistId,
@@ -106,12 +109,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
     final authService = Provider.of<AuthService>(context, listen: false);
     if (!authService.isAuthenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to save favorites'),
-          action: SnackBarAction(
-            label: 'Login',
-            onPressed: _navigateToLogin,
-          ),
+        SnackBar(
+          content: const Text('Please log in to save favorites'),
+          action: SnackBarAction(label: 'Login', onPressed: _navigateToLogin),
         ),
       );
       return;
@@ -200,7 +200,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                                             begin: Alignment.topCenter,
                                             end: Alignment.bottomCenter,
                                             colors: [
-                                              AppColors.primaryColor.withOpacity(0.7),
+                                              AppColors.primaryColor.withAlpha(
+                                                (0.7 * 255).toInt(),
+                                              ),
                                               AppColors.primaryColor,
                                             ],
                                           ),
@@ -213,7 +215,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        AppColors.primaryColor.withOpacity(0.7),
+                                        AppColors.primaryColor.withAlpha(
+                                          (0.7 * 255).toInt(),
+                                        ),
                                         AppColors.primaryColor,
                                       ],
                                     ),
@@ -262,8 +266,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                                         _artistProfile!.profileImageUrl!,
                                       )
                                       : null,
-                              backgroundColor: AppColors.accentColor
-                                  .withOpacity(0.2),
+                              backgroundColor: AppColors.accentColor.withAlpha(
+                                (0.2 * 255).toInt(),
+                              ),
                               child:
                                   _artistProfile!.profileImageUrl == null
                                       ? const Icon(Icons.person, size: 45)
@@ -317,7 +322,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                                                 (spec) => Chip(
                                                   backgroundColor: AppColors
                                                       .primaryColor
-                                                      .withOpacity(0.1),
+                                                      .withAlpha(
+                                                        (0.1 * 255).toInt(),
+                                                      ),
                                                   label: Text(spec),
                                                   padding: EdgeInsets.zero,
                                                   labelStyle: const TextStyle(
@@ -534,7 +541,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen>
                           (_, __, ___) => Container(
                             height: 80,
                             width: double.infinity,
-                            color: AppColors.primaryColor.withOpacity(0.2),
+                            color: AppColors.primaryColor.withAlpha(
+                              (0.2 * 255).toInt(),
+                            ),
                             child: const Center(
                               child: Icon(Icons.image, size: 40),
                             ),

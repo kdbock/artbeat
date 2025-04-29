@@ -7,14 +7,15 @@ import '../services/auth_service.dart';
 import '../routing/route_names.dart';
 import '../core/themes/app_theme.dart';
 import '../widgets/favorite_button.dart';
-import '../services/event_service.dart';
 
 class EventsScreen extends StatefulWidget {
+  const EventsScreen({Key? key}) : super(key: key);
+
   @override
-  _EventsScreenState createState() => _EventsScreenState();
+  EventsScreenState createState() => EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen>
+class EventsScreenState extends State<EventsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
@@ -25,7 +26,13 @@ class _EventsScreenState extends State<EventsScreen>
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategory;
-  List<String> _categories = ['All', 'Art', 'Music', 'Workshops', 'Exhibitions'];
+  final List<String> _categories = [
+    'All',
+    'Art',
+    'Music',
+    'Workshops',
+    'Exhibitions',
+  ];
   String? _selectedSortOption;
   final List<String> _sortOptions = ['Popularity', 'Date', 'Proximity'];
 
@@ -36,9 +43,12 @@ class _EventsScreenState extends State<EventsScreen>
       final userId = authService.currentUserId;
 
       if (userId != null) {
-        final recommendations = await eventService.getUserFavoriteEvents(userId);
+        final recommendations = await eventService.getUserFavoriteEvents(
+          userId,
+        );
         setState(() {
-          _recommendedEvents = recommendations.take(5).toList(); // Limit to 5 recommendations
+          _recommendedEvents =
+              recommendations.take(5).toList(); // Limit to 5 recommendations
         });
       }
     } catch (e) {
@@ -75,7 +85,7 @@ class _EventsScreenState extends State<EventsScreen>
         zipCode: _zipCode,
         searchQuery:
             _searchController.text.isEmpty ? null : _searchController.text,
-        startDate: _selectedDate,
+        startDate: _selectedDate ?? DateTime.now(),
       );
 
       final now = DateTime.now();
@@ -105,10 +115,7 @@ class _EventsScreenState extends State<EventsScreen>
             content: Text(
               'Failed to load events. Please check your connection and try again.',
             ),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: _loadEvents,
-            ),
+            action: SnackBarAction(label: 'Retry', onPressed: _loadEvents),
           ),
         );
       }
@@ -129,15 +136,6 @@ class _EventsScreenState extends State<EventsScreen>
       });
       _loadEvents();
     }
-  }
-
-  void _clearFilters() {
-    setState(() {
-      _zipCode = null;
-      _selectedDate = null;
-      _searchController.clear();
-    });
-    _loadEvents();
   }
 
   @override
@@ -173,10 +171,7 @@ class _EventsScreenState extends State<EventsScreen>
                 children: [
                   const Text(
                     'Recommended for You',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -262,12 +257,13 @@ class _EventsScreenState extends State<EventsScreen>
                     DropdownButton<String>(
                       value: _selectedSortOption,
                       hint: const Text('Sort by'),
-                      items: _sortOptions.map((option) {
-                        return DropdownMenuItem(
-                          value: option,
-                          child: Text(option),
-                        );
-                      }).toList(),
+                      items:
+                          _sortOptions.map((option) {
+                            return DropdownMenuItem(
+                              value: option,
+                              child: Text(option),
+                            );
+                          }).toList(),
                       onChanged: (value) {
                         setState(() {
                           _selectedSortOption = value;
@@ -283,12 +279,13 @@ class _EventsScreenState extends State<EventsScreen>
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _selectedCategory,
-                        items: _categories.map((category) {
-                          return DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
+                        items:
+                            _categories.map((category) {
+                              return DropdownMenuItem(
+                                value: category,
+                                child: Text(category),
+                              );
+                            }).toList(),
                         onChanged: (value) {
                           setState(() {
                             _selectedCategory = value;
@@ -480,8 +477,8 @@ class _EventsScreenState extends State<EventsScreen>
                                     (_, __, ___) => Container(
                                       width: double.infinity,
                                       height: 100,
-                                      color: AppColors.primaryColor.withOpacity(
-                                        0.2,
+                                      color: AppColors.primaryColor.withAlpha(
+                                        (0.2 * 255).toInt(),
                                       ),
                                       child: const Center(
                                         child: Icon(
@@ -494,7 +491,9 @@ class _EventsScreenState extends State<EventsScreen>
                               : Container(
                                 width: double.infinity,
                                 height: 100,
-                                color: AppColors.primaryColor.withOpacity(0.2),
+                                color: AppColors.primaryColor.withAlpha(
+                                  (0.2 * 255).toInt(),
+                                ),
                                 child: const Center(
                                   child: Icon(Icons.event, size: 50),
                                 ),
@@ -506,7 +505,7 @@ class _EventsScreenState extends State<EventsScreen>
                       right: 8,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withAlpha((0.3 * 255).toInt()),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         padding: const EdgeInsets.all(4),
@@ -573,7 +572,7 @@ class _EventsScreenState extends State<EventsScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${DateFormat('h:mm a').format(event.startDate)} - ${DateFormat('h:mm a').format(event.endDate)}',
+                                  '${DateFormat('h:mm a').format(event.startDate ?? DateTime.now())} - ${DateFormat('h:mm a').format(event.endDate ?? DateTime.now())}',
                                   style: TextStyle(color: Colors.grey[700]),
                                 ),
                                 const SizedBox(height: 4),
@@ -624,7 +623,9 @@ class _EventsScreenState extends State<EventsScreen>
                                     event.artistImageUrl != null
                                         ? NetworkImage(event.artistImageUrl!)
                                         : null,
-                                backgroundColor: Colors.grey.withOpacity(0.2),
+                                backgroundColor: Colors.grey.withAlpha(
+                                  (0.2 * 255).toInt(),
+                                ),
                                 child:
                                     event.artistImageUrl == null
                                         ? const Icon(Icons.person, size: 14)
@@ -679,30 +680,4 @@ class _EventsScreenState extends State<EventsScreen>
       },
     );
   }
-}
-
-class Event {
-  final String id;
-  final String title;
-  final DateTime startDate;
-  final DateTime endDate;
-  final String? description;
-  final String? location;
-  final String? imageUrl;
-  final String? artistId;
-  final String? artistName;
-  final String? artistImageUrl;
-
-  Event({
-    required this.id,
-    required this.title,
-    required this.startDate,
-    required this.endDate,
-    this.description,
-    this.location,
-    this.imageUrl,
-    this.artistId,
-    this.artistName,
-    this.artistImageUrl,
-  });
 }

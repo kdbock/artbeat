@@ -34,7 +34,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.resetPassword(email: _emailController.text.trim());
+      await authService.resetPassword(_emailController.text.trim());
 
       if (mounted) {
         setState(() {

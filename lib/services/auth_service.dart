@@ -44,10 +44,9 @@ class AuthService extends ChangeNotifier {
               .from('artist_profiles')
               .select()
               .eq('user_id', _currentUser!.id)
-              .single()
-              .execute();
+              .single();
 
-      _isArtist = response.data != null;
+      _isArtist = response != null;
       notifyListeners();
     } catch (e) {
       _isArtist = false;
@@ -143,29 +142,35 @@ class AuthService extends ChangeNotifier {
     if (_currentUser == null) return null;
 
     try {
-      final response = await _supabase
-          .from('artist_profiles')
-          .select('*')
-          .eq('user_id', _currentUser!.id)
-          .single()
-          .execute();
+      final response =
+          await _supabase
+              .from('artist_profiles')
+              .select('*')
+              .eq('user_id', _currentUser!.id)
+              .single();
 
-      if (response.data != null) {
+      if (response != null) {
         return ArtistProfile(
-          id: response.data['id'],
-          userId: response.data['user_id'],
-          name: response.data['name'],
-          bio: response.data['bio'],
-          subscriptionStatus: response.data['subscription_status'] ?? 'basic',
-          subscriptionEndDate: response.data['subscription_end_date'] != null
-              ? DateTime.parse(response.data['subscription_end_date'])
-              : DateTime.now().add(const Duration(days: 30)),
+          id: response['id'],
+          userId: response['user_id'],
+          name: response['name'],
+          bio: response['bio'],
+          subscriptionStatus: response['subscription_status'] ?? 'basic',
+          subscriptionEndDate:
+              response['subscription_end_date'] != null
+                  ? DateTime.parse(response['subscription_end_date'])
+                  : DateTime.now().add(const Duration(days: 30)),
         );
       }
       return null;
     } catch (e) {
       return null;
     }
+  }
+
+  Future<bool> isLoggedIn() async {
+    // Returns true if a user is currently authenticated
+    return _supabase.auth.currentUser != null;
   }
 }
 

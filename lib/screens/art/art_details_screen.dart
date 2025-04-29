@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/artist_service.dart';
-import '../../services/auth_service.dart';
+import '../../services/artist_service.dart' as artist_service;
+import '../../services/auth_service.dart' show AuthService;
 import '../../core/themes/app_theme.dart';
 import '../../routing/route_names.dart';
 
@@ -19,8 +20,8 @@ class ArtDetailsScreen extends StatefulWidget {
 class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
   bool _isLoading = true;
   bool _isFavorite = false;
-  Artwork? _artwork;
-  ArtistProfile? _artist;
+  artist_service.Artwork? _artwork;
+  artist_service.ArtistProfile? _artist;
 
   @override
   void initState() {
@@ -34,7 +35,10 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
     });
 
     try {
-      final artistService = Provider.of<ArtistService>(context, listen: false);
+      final artistService = Provider.of<artist_service.ArtistService>(
+        context,
+        listen: false,
+      );
       final artwork = await artistService.getArtworkById(widget.artId);
 
       if (artwork != null && mounted) {
@@ -77,11 +81,16 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
     if (!authService.isAuthenticated) return;
 
-    final userProfile = await authService.getUserProfile();
-    final artistService = Provider.of<ArtistService>(context, listen: false);
+    final userProfile = await authService.getArtistProfile();
+    if (!mounted) return;
+
+    final artistService = Provider.of<artist_service.ArtistService>(
+      context,
+      listen: false,
+    );
 
     final isFavorite = await artistService.isArtworkInFavorites(
-      userProfile.id,
+      userProfile!.id,
       widget.artId,
     );
 
@@ -95,16 +104,23 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
   Future<void> _toggleFavorite() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     if (!authService.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please sign in to save artwork to favorites'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in to save artwork to favorites'),
+          ),
+        );
+      }
       return;
     }
 
-    final artistService = Provider.of<ArtistService>(context, listen: false);
-    final userProfile = await authService.getUserProfile();
+    final artistService = Provider.of<artist_service.ArtistService>(
+      context,
+      listen: false,
+    );
+    final userProfile = await authService.getArtistProfile();
+    if (!mounted) return;
+
     bool success;
 
     setState(() {
@@ -113,7 +129,7 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
 
     if (_isFavorite) {
       success = await artistService.addArtworkToFavorites(
-        userProfile.id,
+        userProfile!.id,
         _artwork!.id,
       );
       if (success && mounted) {
@@ -123,7 +139,7 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
       }
     } else {
       success = await artistService.removeArtworkFromFavorites(
-        userProfile.id,
+        userProfile!.id,
         _artwork!.id,
       );
       if (success && mounted) {
@@ -173,7 +189,9 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
       );
 
       if (await canLaunchUrl(emailUri)) {
-        await launchUrl(emailUri);
+        if (mounted) {
+          await launchUrl(emailUri);
+        }
         return;
       } else {
         contactMethod = 'email';
@@ -213,13 +231,15 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
           pinned: true,
           flexibleSpace: FlexibleSpaceBar(
             background: Hero(
-              tag: 'artwork-${_artwork!.id}',
+              tag: 'artwork-${_artwork?.id}',
               child: Image.network(
                 _artwork!.imageUrl,
                 fit: BoxFit.cover,
                 errorBuilder:
                     (_, __, ___) => Container(
-                      color: AppColors.primaryColor.withOpacity(0.2),
+                      color: AppColors.primaryColor.withAlpha(
+                        (0.2 * 255).toInt(),
+                      ),
                       child: const Center(
                         child: Icon(
                           Icons.image,
@@ -354,7 +374,9 @@ class _ArtDetailsScreenState extends State<ArtDetailsScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withAlpha(
+                                  (0.1 * 255).toInt(),
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(

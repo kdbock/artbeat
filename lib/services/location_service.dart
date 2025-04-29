@@ -180,11 +180,10 @@ class LocationService extends ChangeNotifier {
               .from('art_locations')
               .select()
               .eq('id', locationId)
-              .single()
-              .execute();
+              .single();
 
-      if (response.data != null) {
-        return ArtLocation.fromJson(response.data);
+      if (response != null) {
+        return ArtLocation.fromJson(response);
       }
       return null;
     } catch (e) {
@@ -332,7 +331,7 @@ class LocationService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      Logger.logError('Error creating walking tour', e);
+      print('Error creating walking tour: $e');
       return false;
     }
   }
@@ -360,40 +359,6 @@ class LocationService extends ChangeNotifier {
 
   double _degreesToRadians(double degrees) {
     return degrees * (pi / 180);
-  }
-
-  // Calculate the total distance of a walking tour
-  double _calculateTotalDistance(List<ArtLocation> locations) {
-    double totalDistance = 0.0;
-
-    for (int i = 0; i < locations.length - 1; i++) {
-      final currentLocation = locations[i];
-      final nextLocation = locations[i + 1];
-
-      totalDistance += calculateDistance(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        nextLocation.latitude,
-        nextLocation.longitude,
-      );
-    }
-
-    return totalDistance;
-  }
-
-  // Estimate the time to complete a walking tour (in minutes)
-  int _calculateEstimatedTime(double distanceKm) {
-    // Assume average walking speed of 5 km/h (plus extra time for viewing art)
-    const double walkingSpeedKmH = 5.0;
-    const int minutesPerArtwork = 5; // Average viewing time per artwork
-
-    // Walking time in hours
-    final double walkingTimeHours = distanceKm / walkingSpeedKmH;
-    // Convert to minutes
-    final int walkingTimeMinutes = (walkingTimeHours * 60).round();
-
-    // Add viewing time
-    return walkingTimeMinutes;
   }
 
   // Get directions between locations
@@ -463,7 +428,7 @@ class LocationService extends ChangeNotifier {
     // In a real app, you would fetch this from an API or database
     // For now, return mock data
     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    
+
     return _getMockArtLocations().where((location) {
       // Calculate distance between points (simplified for example)
       final latDiff = location.latitude - latitude;
@@ -478,7 +443,7 @@ class LocationService extends ChangeNotifier {
   Future<List<ArtLocation>> getArtLocationsByZipCode(int zipCode) async {
     // In a real app, you would fetch this from an API or database
     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    
+
     // This is mock data that pretends to filter by zip code
     // In a real app, you would have a proper zip code lookup service
     return _getMockArtLocations();

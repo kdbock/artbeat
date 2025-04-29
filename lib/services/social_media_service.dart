@@ -1,3 +1,4 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/utils/logger.dart';
 
 class SocialMediaService {
@@ -30,17 +31,20 @@ class SocialMediaService {
 
   Future<List<Map<String, dynamic>>> fetchPosts({int? zipCode}) async {
     try {
-      var query = _supabase.from('posts').select().order('created_at', ascending: false);
+      var query = _supabase
+          .from('posts')
+          .select()
+          .order('created_at', ascending: false);
 
       if (zipCode != null) {
-        query = query.eq('zip_code', zipCode);
+        query = query.filter('zip_code', 'eq', zipCode);
       }
 
-      final response = await query.execute();
+      final response = await query;
 
-      if (response.data != null) {
+      if (response != null) {
         Logger.logInfo('Posts fetched successfully');
-        return List<Map<String, dynamic>>.from(response.data);
+        return List<Map<String, dynamic>>.from(response as List);
       }
       return [];
     } catch (e, stackTrace) {
@@ -68,7 +72,10 @@ class SocialMediaService {
     }
   }
 
-  Future<void> likePost({required String postId, required String userId}) async {
+  Future<void> likePost({
+    required String postId,
+    required String userId,
+  }) async {
     try {
       await _supabase.from('likes').insert({
         'post_id': postId,
@@ -99,5 +106,15 @@ class SocialMediaService {
       Logger.logError('Error making donation', e, stackTrace);
       rethrow;
     }
+  }
+}
+
+extension on PostgrestTransformBuilder<PostgrestList> {
+  PostgrestTransformBuilder<PostgrestList> filter(
+    String s,
+    String t,
+    int zipCode,
+  ) {
+    throw UnimplementedError('The filter method is not implemented yet.');
   }
 }

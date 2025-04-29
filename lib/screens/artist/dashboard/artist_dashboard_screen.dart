@@ -50,7 +50,7 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
 
       if (mounted) {
         setState(() {
-          _artistProfile = artistProfile;
+          _artistProfile = artistProfile as ArtistProfile?;
           _isLoading = false;
         });
       }
@@ -161,11 +161,11 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
                   radius: 36,
                   backgroundColor: Colors.grey[200],
                   backgroundImage:
-                      _artistProfile?.avatarUrl != null
-                          ? NetworkImage(_artistProfile!.avatarUrl!)
+                      _artistProfile?.profileImageUrl != null
+                          ? NetworkImage(_artistProfile!.profileImageUrl!)
                           : null,
                   child:
-                      _artistProfile?.avatarUrl == null
+                      _artistProfile?.profileImageUrl == null
                           ? const Icon(
                             Icons.person,
                             size: 40,
@@ -251,25 +251,25 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
               children: [
                 _buildMetricCard(
                   'Profile Views',
-                  data?.profileViews ?? 0,
+                  data?.profileViews.toInt() ?? 0,
                   Icons.visibility,
                   Colors.blue,
                 ),
                 _buildMetricCard(
                   'Artwork Views',
-                  data?.artworkViews ?? 0,
+                  data?.artworkViews.toInt() ?? 0,
                   Icons.image,
                   Colors.purple,
                 ),
                 _buildMetricCard(
                   'Artworks',
-                  data?.totalArtworks ?? 0,
+                  data?.totalArtworks.toInt() ?? 0,
                   Icons.palette,
                   Colors.orange,
                 ),
                 _buildMetricCard(
                   'Events',
-                  data?.totalEvents ?? 0,
+                  data?.totalEvents.toInt() ?? 0,
                   Icons.event,
                   Colors.green,
                 ),
@@ -380,7 +380,11 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
             children: [
               CircleAvatar(
                 backgroundColor: Color.fromRGBO(
-                    color.r, color.g, color.b, 0.2),
+                  color.r.toInt(),
+                  color.g.toInt(),
+                  color.b.toInt(),
+                  0.2,
+                ),
                 radius: 28,
                 child: Icon(icon, color: color, size: 32),
               ),
@@ -419,6 +423,20 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
         return Colors.grey;
     }
   }
+}
+
+class ArtistProfile {
+  final String? profileImageUrl;
+  final String subscriptionStatus;
+  final String? bio;
+  final String id;
+
+  ArtistProfile({
+    required this.id,
+    this.profileImageUrl,
+    required this.subscriptionStatus,
+    this.bio,
+  });
 }
 
 class ArtistAnalytics {

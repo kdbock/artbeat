@@ -53,7 +53,9 @@ class Event {
       imageUrl: json['image_url'],
       isPublic: json['is_public'] ?? true,
       createdAt: DateTime.parse(json['created_at']),
-      artistName: json['artist_profiles']?['display_name'] ?? json['artist_profiles']?['name'],
+      artistName:
+          json['artist_profiles']?['display_name'] ??
+          json['artist_profiles']?['name'],
       artistImageUrl: json['artist_profiles']?['avatar_url'],
     );
   }
@@ -79,18 +81,13 @@ class EventService extends ChangeNotifier {
           .limit(limit);
 
       if (zipCode != null) {
-        queryBuilder = queryBuilder.eq('zip_code', zipCode);
+        queryBuilder = queryBuilder.match({'zip_code': zipCode});
       }
 
       final response = await queryBuilder;
 
-      if (response != null) {
-        Logger.logInfo('Upcoming events fetched successfully');
-        return (response as List)
-            .map((item) => Event.fromJson(item))
-            .toList();
-      }
-      return [];
+      Logger.logInfo('Upcoming events fetched successfully');
+      return (response as List).map((item) => Event.fromJson(item)).toList();
     } catch (e, stackTrace) {
       Logger.logError('Error fetching upcoming events', e, stackTrace);
       return [];
@@ -99,16 +96,14 @@ class EventService extends ChangeNotifier {
 
   Future<Event?> getEventDetails(String eventId) async {
     try {
-      final response = await _supabase
-          .from('events')
-          .select('*, artist_profiles(*)')
-          .eq('id', eventId)
-          .single();
+      final response =
+          await _supabase
+              .from('events')
+              .select('*, artist_profiles(*)')
+              .eq('id', eventId)
+              .single();
 
-      if (response != null) {
-        return Event.fromJson(response);
-      }
-      return null;
+      return Event.fromJson(response);
     } catch (e) {
       return null;
     }
@@ -133,12 +128,7 @@ class EventService extends ChangeNotifier {
 
       final response = await queryBuilder.order('start_date');
 
-      if (response != null) {
-        return (response as List)
-            .map((item) => Event.fromJson(item))
-            .toList();
-      }
-      return [];
+      return (response as List).map((item) => Event.fromJson(item)).toList();
     } catch (e) {
       return [];
     }
@@ -267,17 +257,12 @@ class EventService extends ChangeNotifier {
           .limit(limit);
 
       if (zipCode != null) {
-        queryBuilder = queryBuilder.eq('zip_code', zipCode);
+        queryBuilder = queryBuilder.match({'zip_code': zipCode});
       }
 
       final response = await queryBuilder;
 
-      if (response != null) {
-        return (response as List)
-            .map((item) => Event.fromJson(item))
-            .toList();
-      }
-      return [];
+      return (response as List).map((item) => Event.fromJson(item)).toList();
     } catch (e) {
       return [];
     }
@@ -324,12 +309,9 @@ class EventService extends ChangeNotifier {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      if (response != null) {
-        return (response as List)
-            .map((item) => Event.fromJson(item['events']))
-            .toList();
-      }
-      return [];
+      return (response as List)
+          .map((item) => Event.fromJson(item['events']))
+          .toList();
     } catch (e) {
       return [];
     }
@@ -344,7 +326,7 @@ class EventService extends ChangeNotifier {
           .eq('user_id', userId)
           .eq('event_id', eventId);
 
-      return response != null && (response as List).isNotEmpty;
+      return (response as List).isNotEmpty;
     } catch (e) {
       return false;
     }
@@ -354,34 +336,34 @@ class EventService extends ChangeNotifier {
     // Subscribe users to the artist's topic for notifications
 
     // Log the notification setup
-    print('Notification set up for artist: $artistId, event: $eventTitle');
+    Logger.logInfo(
+      'Notification set up for artist: $artistId, event: $eventTitle',
+    );
   }
 
   Future<void> stopNotificationsForArtist(String artistId) async {
     // Unsubscribe users from the artist's topic
 
     // Log the unsubscription
-    print('Stopped notifications for artist: $artistId');
+    Logger.logInfo('Stopped notifications for artist: $artistId');
   }
 
   // Get a specific event by ID
   Future<Event> getEventById(String eventId) async {
     try {
-      final response = await _supabase
-          .from('events')
-          .select('*, artist_profiles(*)')
-          .eq('id', eventId)
-          .single();
+      final response =
+          await _supabase
+              .from('events')
+              .select('*, artist_profiles(*)')
+              .eq('id', eventId)
+              .single();
 
-      if (response != null) {
-        return Event.fromJson(response);
-      }
-      throw Exception('Event not found');
+      return Event.fromJson(response);
     } catch (e) {
       throw Exception('Failed to load event: $e');
     }
   }
-  
+
   // Get events with filters
   Future<List<Event>> getEvents({
     int? zipCode,
@@ -395,15 +377,19 @@ class EventService extends ChangeNotifier {
           .eq('is_public', true);
 
       if (zipCode != null) {
-        queryBuilder = queryBuilder.eq('zip_code', zipCode);
+        queryBuilder = queryBuilder.match({'zip_code': zipCode});
       }
-      
+
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryBuilder = queryBuilder.ilike('title', '%$searchQuery%');
       }
-      
+
       if (startDate != null) {
-        final startOfDay = DateTime(startDate.year, startDate.month, startDate.day);
+        final startOfDay = DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day,
+        );
         final endOfDay = startOfDay.add(const Duration(days: 1));
         queryBuilder = queryBuilder
             .gte('start_date', startOfDay.toIso8601String())
@@ -412,38 +398,34 @@ class EventService extends ChangeNotifier {
 
       final response = await queryBuilder.order('start_date');
 
-      if (response != null) {
-        final List<Event> events = (response as List)
-            .map((item) => Event.fromJson(item))
-            .toList();
-            
-        // Add artistName and artistImageUrl from artist_profiles
-        for (var i = 0; i < events.length; i++) {
-          final event = events[i];
-          final artistProfile = (response as List)[i]['artist_profiles'];
-          if (artistProfile != null) {
-            events[i] = Event(
-              id: event.id,
-              title: event.title,
-              description: event.description,
-              startDate: event.startDate,
-              endDate: event.endDate,
-              location: event.location,
-              latitude: event.latitude,
-              longitude: event.longitude,
-              artistId: event.artistId,
-              imageUrl: event.imageUrl,
-              isPublic: event.isPublic,
-              createdAt: event.createdAt,
-              artistName: artistProfile['display_name'] ?? artistProfile['name'],
-              artistImageUrl: artistProfile['avatar_url'],
-            );
-          }
+      final List<Event> events =
+          (response as List).map((item) => Event.fromJson(item)).toList();
+
+      // Add artistName and artistImageUrl from artist_profiles
+      for (var i = 0; i < events.length; i++) {
+        final event = events[i];
+        final artistProfile = (response as List)[i]['artist_profiles'];
+        if (artistProfile != null) {
+          events[i] = Event(
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            location: event.location,
+            latitude: event.latitude,
+            longitude: event.longitude,
+            artistId: event.artistId,
+            imageUrl: event.imageUrl,
+            isPublic: event.isPublic,
+            createdAt: event.createdAt,
+            artistName: artistProfile['display_name'] ?? artistProfile['name'],
+            artistImageUrl: artistProfile['avatar_url'],
+          );
         }
-        
-        return events;
       }
-      return [];
+
+      return events;
     } catch (e, stackTrace) {
       Logger.logError('Error fetching events', e, stackTrace);
       return [];

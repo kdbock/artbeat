@@ -17,12 +17,10 @@ class ArtBeatApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ProxyProvider<AuthService, ArtistService>(
-          update:
-              (_, authService, __) => ArtistService(authService: authService),
+          update: (_, authService, __) => ArtistService(),
         ),
         ProxyProvider<AuthService, EventService>(
-          update:
-              (_, authService, __) => EventService(authService: authService),
+          update: (_, authService, __) => EventService(),
         ),
         Provider<LocationService>(create: (_) => LocationService()),
       ],

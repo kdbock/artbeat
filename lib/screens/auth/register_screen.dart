@@ -52,14 +52,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.register(
+      await authService.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         name: _nameController.text.trim(),
-        zipCode:
-            _zipCodeController.text.isEmpty
-                ? null
-                : int.tryParse(_zipCodeController.text.trim()),
       );
 
       if (mounted) {

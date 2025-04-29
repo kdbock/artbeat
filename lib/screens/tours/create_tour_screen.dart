@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/auth_service.dart';
 import '../../services/location_service.dart';
 import '../../core/themes/app_theme.dart';
+import '../../services/artist_service.dart' as artist_service;
 
 class CreateWalkingTourScreen extends StatefulWidget {
   final List<String> artLocationIds;
@@ -172,14 +173,17 @@ class _CreateWalkingTourScreenState extends State<CreateWalkingTourScreen> {
         listen: false,
       );
 
-      final userProfile = await authService.getUserProfile();
+      final userProfile = await authService.getArtistProfile();
+      final creatorId = userProfile?.id ?? '';
+      final creatorName =
+          (userProfile as artist_service.ArtistProfile?)?.displayName ?? '';
 
       final success = await locationService.createWalkingTour(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         artLocations: _selectedLocations,
-        creatorId: userProfile.id,
-        creatorName: userProfile.displayName,
+        creatorId: creatorId,
+        creatorName: creatorName,
         imageFile: _imageFile,
         totalDistanceKm: _totalDistanceKm,
         estimatedMinutes: _estimatedMinutes,
@@ -303,7 +307,7 @@ class _CreateWalkingTourScreenState extends State<CreateWalkingTourScreen> {
                                   ),
                                   _buildInfoItem(
                                     Icons.timer,
-                                    '${_estimatedMinutes} min',
+                                    '$_estimatedMinutes min',
                                     Colors.orange,
                                   ),
                                 ],
